@@ -1,6 +1,6 @@
 {
   "name": "sinon.js",
-  "version": "1.12.2",
+  "version": "1.14.1",
   "main": "sinon.js",
   "ignore": [
     "**/.*",
