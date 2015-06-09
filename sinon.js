@@ -1,17 +1,17 @@
 /**
- * Sinon.JS 1.14.1, 2015/03/16
+ * Sinon.JS 1.15.0, 2015/05/30
  *
  * @author Christian Johansen (christian@cjohansen.no)
  * @author Contributors: https://github.com/cjohansen/Sinon.JS/blob/master/AUTHORS
  *
  * (The BSD License)
- * 
+ *
  * Copyright (c) 2010-2014, Christian Johansen, christian@cjohansen.no
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright notice,
  *       this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright notice,
@@ -20,7 +20,7 @@
  *     * Neither the name of Christian Johansen nor the names of his contributors
  *       may be used to endorse or promote products derived from this software
  *       without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -34,6 +34,7 @@
  */
 
 (function (root, factory) {
+  'use strict';
   if (typeof define === 'function' && define.amd) {
     define('sinon', [], function () {
       return (root.sinon = factory());
@@ -44,7 +45,8 @@
     root.sinon = factory();
   }
 }(this, function () {
-  var samsam, formatio;
+  'use strict';
+  var samsam, formatio, lolex;
   (function () {
                 function define(mod, deps, fn) {
                   if (mod == "samsam") {
@@ -461,7 +463,7 @@
     module.exports = m(require("samsam"));
 }) || function (m) { this.formatio = m(this.samsam); }
 )(function (samsam) {
-    
+
     var formatio = {
         excludeConstructors: ["Object", /^.$/],
         quoteStrings: true,
@@ -564,7 +566,7 @@
         processed.push(array);
         var pieces = [];
         var i, l;
-        l = (this.limitChildrenCount > 0) ? 
+        l = (this.limitChildrenCount > 0) ?
             Math.min(this.limitChildrenCount, array.length) : array.length;
 
         for (i = 0; i < l; ++i) {
@@ -584,7 +586,7 @@
         var pieces = [], properties = samsam.keys(object).sort();
         var length = 3;
         var prop, str, obj, i, k, l;
-        l = (this.limitChildrenCount > 0) ? 
+        l = (this.limitChildrenCount > 0) ?
             Math.min(this.limitChildrenCount, properties.length) : properties.length;
 
         for (i = 0; i < l; ++i) {
@@ -1288,21 +1290,19 @@ var sinon = (function () {
                 // If this fails (ex: localStorage on mobile safari) then force a reset
                 // via direct assignment.
                 if (!owned) {
+                    // In some cases `delete` may throw an error
                     try {
                         delete object[property];
                     } catch (e) {}
                     // For native code functions `delete` fails without throwing an error
                     // on Chrome < 43, PhantomJS, etc.
-                    // Use strict equality comparison to check failures then force a reset
-                    // via direct assignment.
-                    if (object[property] === method) {
-                        object[property] = wrappedMethod;
-                    }
                 } else if (hasES5Support) {
                     Object.defineProperty(object, property, wrappedMethodDesc);
                 }
 
-                if (!hasES5Support && object[property] === method) {
+                // Use strict equality comparison to check failures then force a reset
+                // via direct assignment.
+                if (object[property] === method) {
                     object[property] = wrappedMethod;
                 }
             };
@@ -2375,6 +2375,7 @@ var sinon = (function () {
                     return p.invoke(func, this, slice.call(arguments));
                 };
             }
+            p.isSinonProxy = true;
             return p;
         }
 
@@ -2635,10 +2636,12 @@ var sinon = (function () {
         delegateToCalls("alwaysCalledWithMatch", false, "calledWithMatch");
         delegateToCalls("calledWithExactly", true);
         delegateToCalls("alwaysCalledWithExactly", false, "calledWithExactly");
-        delegateToCalls("neverCalledWith", false, "notCalledWith",
-            function () { return true; });
-        delegateToCalls("neverCalledWithMatch", false, "notCalledWithMatch",
-            function () { return true; });
+        delegateToCalls("neverCalledWith", false, "notCalledWith", function () {
+            return true;
+        });
+        delegateToCalls("neverCalledWithMatch", false, "notCalledWithMatch", function () {
+            return true;
+        });
         delegateToCalls("threw", true);
         delegateToCalls("alwaysThrew", false, "threw");
         delegateToCalls("returned", true);
@@ -3154,7 +3157,7 @@ var sinon = (function () {
 
             if (typeof property === "undefined" && typeof object == "object") {
                 for (var prop in object) {
-                    if (typeof object[prop] === "function") {
+                    if (typeof sinon.getPropertyDescriptor(object, prop).value === "function") {
                         stub(object, prop);
                     }
                 }
@@ -3309,6 +3312,10 @@ var sinon = (function () {
         var match = sinon.match;
 
         function mock(object) {
+            if (typeof console !== undefined && console.warn) {
+                console.warn("mock will be removed from Sinon.JS v2.0");
+            }
+
             if (!object) {
                 return sinon.expectation.create("Anonymous mock");
             }
@@ -4384,7 +4391,7 @@ if (typeof sinon == "undefined") {
     } else {
         makeApi(sinon);
     }
-})(this);
+})(typeof global !== "undefined" ? global : self);
 
 /**
  * @depend core.js
@@ -4405,13 +4412,16 @@ if (typeof sinon == "undefined") {
 
     var supportsProgress = typeof ProgressEvent !== "undefined";
     var supportsCustomEvent = typeof CustomEvent !== "undefined";
+    var supportsFormData = typeof FormData !== "undefined";
     var sinonXhr = { XMLHttpRequest: global.XMLHttpRequest };
     sinonXhr.GlobalXMLHttpRequest = global.XMLHttpRequest;
     sinonXhr.GlobalActiveXObject = global.ActiveXObject;
     sinonXhr.supportsActiveX = typeof sinonXhr.GlobalActiveXObject != "undefined";
     sinonXhr.supportsXHR = typeof sinonXhr.GlobalXMLHttpRequest != "undefined";
     sinonXhr.workingXHR = sinonXhr.supportsXHR ? sinonXhr.GlobalXMLHttpRequest : sinonXhr.supportsActiveX
-                                     ? function () { return new sinonXhr.GlobalActiveXObject("MSXML2.XMLHTTP.3.0") } : false;
+                                     ? function () {
+                                        return new sinonXhr.GlobalActiveXObject("MSXML2.XMLHTTP.3.0")
+                                    } : false;
     sinonXhr.supportsCORS = sinonXhr.supportsXHR && "withCredentials" in (new sinonXhr.GlobalXMLHttpRequest());
 
     /*jsl:ignore*/
@@ -4752,19 +4762,19 @@ if (typeof sinon == "undefined") {
                     }
                 }
 
-                this.dispatchEvent(new sinon.Event("readystatechange"));
-
                 switch (this.readyState) {
                     case FakeXMLHttpRequest.DONE:
-                        this.dispatchEvent(new sinon.Event("load", false, false, this));
-                        this.dispatchEvent(new sinon.Event("loadend", false, false, this));
-                        this.upload.dispatchEvent(new sinon.Event("load", false, false, this));
                         if (supportsProgress) {
                             this.upload.dispatchEvent(new sinon.ProgressEvent("progress", {loaded: 100, total: 100}));
                             this.dispatchEvent(new sinon.ProgressEvent("progress", {loaded: 100, total: 100}));
                         }
+                        this.upload.dispatchEvent(new sinon.Event("load", false, false, this));
+                        this.dispatchEvent(new sinon.Event("load", false, false, this));
+                        this.dispatchEvent(new sinon.Event("loadend", false, false, this));
                         break;
                 }
+
+                this.dispatchEvent(new sinon.Event("readystatechange"));
             },
 
             setRequestHeader: function setRequestHeader(header, value) {
@@ -4808,7 +4818,7 @@ if (typeof sinon == "undefined") {
                     if (this.requestHeaders[contentType]) {
                         var value = this.requestHeaders[contentType].split(";");
                         this.requestHeaders[contentType] = value[0] + ";charset=utf-8";
-                    } else if (!(data instanceof FormData)) {
+                    } else if (supportsFormData && !(data instanceof FormData)) {
                         this.requestHeaders["Content-Type"] = "text/plain;charset=utf-8";
                     }
 
@@ -4831,6 +4841,7 @@ if (typeof sinon == "undefined") {
                 this.responseText = null;
                 this.errorFlag = true;
                 this.requestHeaders = {};
+                this.responseHeaders = {};
 
                 if (this.readyState > FakeXMLHttpRequest.UNSENT && this.sendFlag) {
                     this.readyStateChange(FakeXMLHttpRequest.DONE);
@@ -5004,7 +5015,7 @@ if (typeof sinon == "undefined") {
         makeApi(sinon);
     }
 
-})(typeof global !== "undefined" ? global : this);
+})(typeof global !== "undefined" ? global : self);
 
 /**
  * @depend fake_xdomain_request.js
@@ -5158,7 +5169,9 @@ if (typeof sinon == "undefined") {
                     return;
                 }
 
-                if (!this.responses) { this.responses = []; }
+                if (!this.responses) {
+                    this.responses = [];
+                }
 
                 if (arguments.length == 1) {
                     body = method;
@@ -5652,11 +5665,9 @@ if (typeof sinon == "undefined") {
 
     function makeApi(sinon) {
         function testCase(tests, prefix) {
-            /*jsl:ignore*/
             if (!tests || typeof tests != "object") {
                 throw new TypeError("sinon.testCase needs an object with test functions");
             }
-            /*jsl:end*/
 
             prefix = prefix || "test";
             var rPrefix = new RegExp("^" + prefix);
@@ -5665,12 +5676,8 @@ if (typeof sinon == "undefined") {
             var tearDown = tests.tearDown;
 
             for (testName in tests) {
-                if (tests.hasOwnProperty(testName)) {
+                if (tests.hasOwnProperty(testName) && !/^(setUp|tearDown)$/.test(testName)) {
                     property = tests[testName];
-
-                    if (/^(setUp|tearDown)$/.test(testName)) {
-                        continue;
-                    }
 
                     if (typeof property == "function" && rPrefix.test(testName)) {
                         method = property;
@@ -5744,7 +5751,7 @@ if (typeof sinon == "undefined") {
                     assert.fail("fake is not a spy");
                 }
 
-                if (method.proxy) {
+                if (method.proxy && method.proxy.isSinonProxy) {
                     verifyIsStub(method.proxy);
                 } else {
                     if (typeof method != "function") {
@@ -5881,8 +5888,9 @@ if (typeof sinon == "undefined") {
         };
 
         mirrorPropAsAssertion("called", "expected %n to have been called at least once but was never called");
-        mirrorPropAsAssertion("notCalled", function (spy) { return !spy.called; },
-                            "expected %n to not have been called but was called %c%C");
+        mirrorPropAsAssertion("notCalled", function (spy) {
+            return !spy.called;
+        }, "expected %n to not have been called but was called %c%C");
         mirrorPropAsAssertion("calledOnce", "expected %n to be called once but was called %c%C");
         mirrorPropAsAssertion("calledTwice", "expected %n to be called twice but was called %c%C");
         mirrorPropAsAssertion("calledThrice", "expected %n to be called thrice but was called %c%C");
