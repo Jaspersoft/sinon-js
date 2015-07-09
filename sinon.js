@@ -1,17 +1,17 @@
 /**
- * Sinon.JS 1.15.0, 2015/05/30
+ * Sinon.JS 1.15.4, 2015/06/27
  *
  * @author Christian Johansen (christian@cjohansen.no)
  * @author Contributors: https://github.com/cjohansen/Sinon.JS/blob/master/AUTHORS
  *
  * (The BSD License)
- *
+ * 
  * Copyright (c) 2010-2014, Christian Johansen, christian@cjohansen.no
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright notice,
  *       this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright notice,
@@ -20,7 +20,7 @@
  *     * Neither the name of Christian Johansen nor the names of his contributors
  *       may be used to endorse or promote products derived from this software
  *       without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -463,7 +463,7 @@
     module.exports = m(require("samsam"));
 }) || function (m) { this.formatio = m(this.samsam); }
 )(function (samsam) {
-
+    
     var formatio = {
         excludeConstructors: ["Object", /^.$/],
         quoteStrings: true,
@@ -566,7 +566,7 @@
         processed.push(array);
         var pieces = [];
         var i, l;
-        l = (this.limitChildrenCount > 0) ?
+        l = (this.limitChildrenCount > 0) ? 
             Math.min(this.limitChildrenCount, array.length) : array.length;
 
         for (i = 0; i < l; ++i) {
@@ -586,7 +586,7 @@
         var pieces = [], properties = samsam.keys(object).sort();
         var length = 3;
         var prop, str, obj, i, k, l;
-        l = (this.limitChildrenCount > 0) ?
+        l = (this.limitChildrenCount > 0) ? 
             Math.min(this.limitChildrenCount, properties.length) : properties.length;
 
         for (i = 0; i < l; ++i) {
@@ -3312,9 +3312,9 @@ var sinon = (function () {
         var match = sinon.match;
 
         function mock(object) {
-            if (typeof console !== undefined && console.warn) {
-                console.warn("mock will be removed from Sinon.JS v2.0");
-            }
+            // if (typeof console !== undefined && console.warn) {
+            //     console.warn("mock will be removed from Sinon.JS v2.0");
+            // }
 
             if (!object) {
                 return sinon.expectation.create("Anonymous mock");
@@ -4447,6 +4447,10 @@ if (typeof sinon == "undefined") {
     };
     /*jsl:end*/
 
+    // Note that for FakeXMLHttpRequest to work pre ES5
+    // we lose some of the alignment with the spec.
+    // To ensure as close a match as possible,
+    // set responseType before calling open, send or respond;
     function FakeXMLHttpRequest() {
         this.readyState = FakeXMLHttpRequest.UNSENT;
         this.requestHeaders = {};
@@ -4454,6 +4458,8 @@ if (typeof sinon == "undefined") {
         this.status = 0;
         this.statusText = "";
         this.upload = new UploadProgress();
+        this.responseType = "";
+        this.response = "";
         if (sinonXhr.supportsCORS) {
             this.withCredentials = false;
         }
@@ -4735,6 +4741,7 @@ if (typeof sinon == "undefined") {
                 this.username = username;
                 this.password = password;
                 this.responseText = null;
+                this.response = this.responseType === "json" ? null : "";
                 this.responseXML = null;
                 this.requestHeaders = {};
                 this.sendFlag = false;
@@ -4827,6 +4834,7 @@ if (typeof sinon == "undefined") {
 
                 this.errorFlag = false;
                 this.sendFlag = this.async;
+                this.response = this.responseType === "json" ? null : "";
                 this.readyStateChange(FakeXMLHttpRequest.OPENED);
 
                 if (typeof this.onSend == "function") {
@@ -4839,6 +4847,7 @@ if (typeof sinon == "undefined") {
             abort: function abort() {
                 this.aborted = true;
                 this.responseText = null;
+                this.response = this.responseType === "json" ? null : "";
                 this.errorFlag = true;
                 this.requestHeaders = {};
                 this.responseHeaders = {};
@@ -4919,6 +4928,7 @@ if (typeof sinon == "undefined") {
                     }
                 }
 
+                this.response = this.responseType === "json" ? JSON.parse(this.responseText) : this.responseText;
                 this.readyStateChange(FakeXMLHttpRequest.DONE);
             },
 
